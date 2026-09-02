@@ -43,7 +43,8 @@ body {
     margin-bottom: 4px;
 }
 
-.field input {
+.field input,
+.field select {
     width: 100%;
     padding: 10px 12px;
     font-size: 16px;
@@ -193,6 +194,15 @@ body {
     </div>
 
     <div class="field">
+        <label>Bogstav</label>
+        <select id="bogstav">
+            <option value="R" selected>R</option>
+            <option value="D">D</option>
+            <option value="F">F</option>
+        </select>
+    </div>
+
+    <div class="field">
         <label>AFD</label>
         <input type="text" id="afd" placeholder="4">
     </div>
@@ -228,7 +238,7 @@ body {
 
 <script>
 
-function gemHistorik(ordid, afd, stue, antal) {
+function gemHistorik(ordid, bogstav, afd, stue, antal) {
 
     const historik =
         JSON.parse(localStorage.getItem('fouHistorik') || '[]');
@@ -236,6 +246,7 @@ function gemHistorik(ordid, afd, stue, antal) {
     historik.push({
         tidspunkt: new Date().toLocaleString('da-DK'),
         ordrenummer: ordid,
+        bogstav: bogstav,
         afd: afd,
         stue: stue,
         antal: antal
@@ -269,6 +280,8 @@ function visHistorik() {
             <div class="historik-row">
                 ${item.tidspunkt}<br>
                 Ordre: ${item.ordrenummer}
+                |
+                Bogstav: ${item.bogstav || 'R'}
                 |
                 AFD: ${item.afd}
                 |
@@ -342,6 +355,9 @@ function genererLabels() {
     const ordid =
         document.getElementById('ordid').value.trim();
 
+    const bogstav =
+        document.getElementById('bogstav').value.trim();
+
     const afd =
         document.getElementById('afd').value.trim();
 
@@ -369,6 +385,7 @@ function genererLabels() {
 
     gemHistorik(
         ordid,
+        bogstav,
         afd,
         stue,
         antal
@@ -394,7 +411,7 @@ function genererLabels() {
             </div>
 
             <div class="code">
-                R${afd}.${stue}
+                ${bogstav}${afd}.${stue}
             </div>
 
             <div class="ordrenummer">
