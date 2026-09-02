@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<title>FOU-levering label</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #eef1f3;
+    margin: 0;
+    padding: 24px;
+}
+
+.form-panel {
+    max-width: 420px;
+    margin: 0 auto 32px auto;
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.form-panel h1 {
+    font-size: 20px;
+    margin: 0 0 16px 0;
+    color: #1f2937;
+}
+
+.field {
+    margin-bottom: 14px;
+}
+
+.field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+.field input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+}
+
+.btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 6px;
+}
+
+.btn-primary {
+    background: #2563eb;
+    color: white;
+}
+
+.btn-print {
+    background: #059669;
+    color: white;
+}
+
+.hint {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 10px;
+}
+
+.label-sheet {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.label {
+    width: 100mm;
+    height: 75mm;
+    background: white;
+    border: 1px solid #ccc;
+    padding: 6mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.title {
+    font-size: 14pt;
+    color: #4b5563;
+    margin-bottom: 4mm;
+}
+
+.code {
+    font-size: 60pt;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1;
+}
+
+.ordrenummer {
+    margin-top: 4mm;
+    font-size: 12pt;
+    font-weight: bold;
+}
+
+.barcode {
+    height: 18mm;
+    width: 100%;
+    margin-top: 2mm;
+}
+
+.barcode svg {
+    width: 100%;
+    height: 100%;
+}
+
+.barcode-text {
+    text-align: center;
+    font-size: 12pt;
+    margin-top: 2mm;
+    letter-spacing: 2px;
+}
+
+#historik {
+    margin-top: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.historik-row {
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+    font-size: 14px;
+}
+
+@media print {
+
+    body {
+        background: white;
+        padding: 0;
+        margin: 0;
+    }
+
+    .form-panel {
+        display: none;
+    }
+
+    .label {
+        border: none;
+        page-break-after: always;
+        margin: 0;
+    }
+
+    .label:last-child {
+        page-break-after: auto;
+    }
+
+    @page {
+        size: 100mm 75mm;
+        margin: 0;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="form-panel">
+
+    <h1>FOU-levering – label generator</h1>
+
+    <div class="field">
+        <label>Ordrenummer (9 cifre)</label>
+        <input type="text" id="ordid" placeholder="000100230">
+    </div>
+
+    <div class="field">
+        <label>AFD</label>
+        <input type="text" id="afd" placeholder="4">
+    </div>
+
+    <div class="field">
+        <label>STUE</label>
+        <input type="text" id="stue" placeholder="31">
+    </div>
+
+    <div class="field">
+        <label>Antal labels</label>
+        <input type="number" id="antal" value="1" min="1" max="100">
+    </div>
+
+    <button class="btn btn-primary" onclick="genererLabels()">
+        Generér labels
+    </button>
+
+    <button class="btn btn-print" onclick="window.print()">
+        Print (100 × 75 mm)
+    </button>
+
+    <button class="btn" onclick="rydHistorik()" style="background:#dc2626;color:white;">
+        Ryd historik
+    </button>
+
+    <h2>Historik</h2>
+    <div id="historik"></div>
+
+</div>
+
+<div class="label-sheet" id="labelSheet"></div>
+
+<script>
+
+function gemHistorik(ordid, afd, stue, antal) {
+
+    const historik =
+        JSON.parse(localStorage.getItem('fouHistorik') || '[]');
+
+    historik.push({
+        tidspunkt: new Date().toLocaleString('da-DK'),
+        ordrenummer: ordid,
+        afd: afd,
+        stue: stue,
+        antal: antal
+    });
+
+    localStorage.setItem(
+        'fouHistorik',
+        JSON.stringify(historik)
+    );
+}
+
+function visHistorik() {
+
+    const historik =
+        JSON.parse(localStorage.getItem('fouHistorik') || '[]');
+
+    const container =
+        document.getElementById('historik');
+
+    if (historik.length === 0) {
+        container.innerHTML =
+            '<p>Ingen gemte labels endnu.</p>';
+        return;
+    }
+
+    container.innerHTML =
+        historik
+        .slice()
+        .reverse()
+        .map(item => `
+            <div class="historik-row">
+                ${item.tidspunkt}<br>
+                Ordre: ${item.ordrenummer}
+                |
+                AFD: ${item.afd}
+                |
+                STUE: ${item.stue}
+                |
+                Antal: ${item.antal}
+            </div>
+        `)
+        .join('');
+}
+
+function rydHistorik() {
+
+    if (confirm('Vil du slette hele historikken?')) {
+        localStorage.removeItem('fouHistorik');
+        visHistorik();
+    }
+}
+
+/*
+Simpel lokal stregkodegenerator
+baseret på cifrene i ordrenummeret
+*/
+
+function lavBarcodeSVG(data) {
+
+    let svg =
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 80">';
+
+    let x = 10;
+
+    svg += '<rect width="420" height="80" fill="white"/>';
+
+    svg += '<rect x="' + x + '" y="5" width="2" height="70"/>';
+    x += 4;
+    svg += '<rect x="' + x + '" y="5" width="4" height="70"/>';
+    x += 8;
+
+    for (let c of data) {
+
+        const n = parseInt(c,10);
+
+        for (let i = 0; i < 5; i++) {
+
+            const width =
+                ((n + i) % 3) + 1;
+
+            svg +=
+                '<rect x="' +
+                x +
+                '" y="5" width="' +
+                width * 2 +
+                '" height="70" fill="black"/>';
+
+            x += width * 4;
+        }
+
+        x += 4;
+    }
+
+    svg += '<rect x="' + x + '" y="5" width="4" height="70"/>';
+    x += 8;
+    svg += '<rect x="' + x + '" y="5" width="2" height="70"/>';
+    svg += '</svg>';
+
+    return svg;
+}
+
+function genererLabels() {
+
+    const ordid =
+        document.getElementById('ordid').value.trim();
+
+    const afd =
+        document.getElementById('afd').value.trim();
+
+    const stue =
+        document.getElementById('stue').value.trim();
+
+    const antal =
+        parseInt(document.getElementById('antal').value,10) || 1;
+
+    if (!/^\d{9}$/.test(ordid)) {
+
+        alert(
+            'Ordrenummer skal være præcis 9 cifre.\nEksempel: 000100230'
+        );
+
+        return;
+    }
+
+    if (!afd || !stue) {
+
+        alert('Udfyld både AFD og STUE.');
+
+        return;
+    }
+
+    gemHistorik(
+        ordid,
+        afd,
+        stue,
+        antal
+    );
+
+    visHistorik();
+
+    const sheet =
+        document.getElementById('labelSheet');
+
+    sheet.innerHTML = '';
+
+    for (let i = 0; i < antal; i++) {
+
+        const div =
+            document.createElement('div');
+
+        div.className = 'label';
+
+        div.innerHTML = `
+            <div class="title">
+                FOU-levering til AFD og STUE
+            </div>
+
+            <div class="code">
+                R${afd}.${stue}
+            </div>
+
+            <div class="ordrenummer">
+                Ordre nummer ${ordid}
+            </div>
+
+            <div class="barcode">
+                ${lavBarcodeSVG(ordid)}
+            </div>
+
+            <div class="barcode-text">
+                ${ordid}
+            </div>
+        `;
+
+        sheet.appendChild(div);
+    }
+}
+
+window.onload = function() {
+    visHistorik();
+};
+
+</script>
+
+</body>
+</html>
