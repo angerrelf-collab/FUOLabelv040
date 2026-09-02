@@ -51,6 +51,12 @@ body {
     border-radius: 8px;
 }
 
+/* Grøn markering når input er gyldigt */
+.field input.valid {
+    border-color: #059669;
+    background: #ecfdf5;
+}
+
 .btn {
     width: 100%;
     padding: 12px;
@@ -182,8 +188,8 @@ body {
     <h1>FOU-levering – label generator</h1>
 
     <div class="field">
-        <label>Ordrenummer (9 cifre)</label>
-        <input type="text" id="ordid" placeholder="000100230">
+        <label>Ordrenummer (8 cifre)</label>
+        <input type="text" id="ordid" placeholder="00010023">
     </div>
 
     <div class="field">
@@ -345,10 +351,10 @@ function genererLabels() {
     const antal =
         parseInt(document.getElementById('antal').value,10) || 1;
 
-    if (!/^\d{9}$/.test(ordid)) {
+    if (!/^\d{8}$/.test(ordid)) {
 
         alert(
-            'Ordrenummer skal være præcis 9 cifre.\nEksempel: 000100230'
+            'Ordrenummer skal være præcis 8 cifre.\nEksempel: 00010023'
         );
 
         return;
@@ -410,6 +416,21 @@ function genererLabels() {
 
 window.onload = function() {
     visHistorik();
+
+    const ordInput = document.getElementById('ordid');
+
+    function validateOrd() {
+        const v = ordInput.value.trim();
+        if (/^\d{8}$/.test(v)) {
+            ordInput.classList.add('valid');
+        } else {
+            ordInput.classList.remove('valid');
+        }
+    }
+
+    ordInput.addEventListener('input', validateOrd);
+    // initial check in case field is prefilled
+    validateOrd();
 };
 
 </script>
