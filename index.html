@@ -45,20 +45,22 @@ body {
 
 .field input,
 .field select {
-    width: 100%;
-    padding: 10px 12px;
+    padding: 6px 8px;
     font-size: 16px;
     border: 1px solid #cbd5e1;
     border-radius: 8px;
+    width: 50px; /* alle inputkasser 50px */
 }
 
 .inline-row {
     display: flex;
-    gap: 8px;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: nowrap;
 }
 
 .inline-row .field {
-    flex: 1 1 0;
+    flex: none;
     margin-bottom: 0; /* handled on container */
 }
 
@@ -180,12 +182,12 @@ body {
 
     <h1>FOU-levering – label generator</h1>
 
-    <div class="field">
-        <label>Ordrenummer (8 cifre)</label>
-        <input type="text" id="ordid" placeholder="00010023">
-    </div>
-
     <div class="inline-row">
+        <div class="field">
+            <label>Ordrenummer (8 cifre)</label>
+            <input type="text" id="ordid" placeholder="00010023">
+        </div>
+
         <div class="field">
             <label>Bogstav</label>
             <select id="bogstav">
@@ -204,11 +206,11 @@ body {
             <label>STUE</label>
             <input type="text" id="stue" placeholder="31">
         </div>
-    </div>
 
-    <div class="field">
-        <label>Antal labels</label>
-        <input type="number" id="antal" value="1" min="1" max="100">
+        <div class="field">
+            <label>Antal labels</label>
+            <input type="number" id="antal" value="1" min="1" max="100">
+        </div>
     </div>
 
     <button class="btn btn-primary" onclick="genererLabels()">
@@ -232,7 +234,7 @@ body {
 
 <script>
 
-function gemHistorik(ordid, bogstav, afd, stue, antal) {
+function gemHistorik(ordid, position, antal) {
 
     const historik =
         JSON.parse(localStorage.getItem('fouHistorik') || '[]');
@@ -240,9 +242,7 @@ function gemHistorik(ordid, bogstav, afd, stue, antal) {
     historik.push({
         tidspunkt: new Date().toLocaleString('da-DK'),
         ordrenummer: ordid,
-        bogstav: bogstav,
-        afd: afd,
-        stue: stue,
+        position: position, // gem som BogstavAfd.Stue, fx R4.32
         antal: antal
     });
 
@@ -270,20 +270,20 @@ function visHistorik() {
         historik
         .slice()
         .reverse()
-        .map(item => `
+        .map(item => {
+            // fallback hvis ældre format findes
+            const pos = item.position || ((item.bogstav || 'R') + (item.afd ? item.afd : '') + '.' + (item.stue ? item.stue : ''));
+            return `
             <div class="historik-row">
                 ${item.tidspunkt}<br>
                 Ordre: ${item.ordrenummer}
                 |
-                Bogstav: ${item.bogstav || 'R'}
-                |
-                AFD: ${item.afd}
-                |
-                STUE: ${item.stue}
+                Placering: ${pos}
                 |
                 Antal: ${item.antal}
             </div>
-        `)
+        `
+        })
         .join('');
 }
 
@@ -328,11 +328,11 @@ function genererLabels() {
         return;
     }
 
+    const position = `${bogstav}${afd}.${stue}`;
+
     gemHistorik(
         ordid,
-        bogstav,
-        afd,
-        stue,
+        position,
         antal
     );
 
@@ -356,7 +356,7 @@ function genererLabels() {
             </div>
 
             <div class="code">
-                ${bogstav}${afd}.${stue}
+                ${position}
             </div>
 
             <div class="ordrenummer">
