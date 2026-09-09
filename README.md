@@ -1,6 +1,7 @@
 09092026
 Så er der opdateret til den seneste version.
 Mail sendt ud til alle
+Der er lagt et issue klar til at blive ekspederet ved lejlighed.
 
 03092026
 Dette er den label vi skal bruge til at sætte på udstyr.
